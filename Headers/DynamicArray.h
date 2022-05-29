@@ -7,6 +7,8 @@
  * when that scope ends, (and in case clear and popBack were used), the memory has already been cleared by 
  * these two functions. Therefore the program will crash since the destructor of that type will try to 
  * cleanup memory that has already been cleaned..
+ * In addition, if a Move Constructor was used to move from one vector to the other, the vector that is the 
+ * source of the elements is no longer valid after the move happens and operations on it will maybe crash
  */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
