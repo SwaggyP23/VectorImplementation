@@ -15,8 +15,6 @@
 ///////// For Development 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Overload the copy assignment operator and move operators so that we can copy and move vectors.
-// Overload the == and != operators.
 
 
 #if _DEBUG
