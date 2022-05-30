@@ -1,6 +1,10 @@
 #pragma once
 
 /*
+ * Always refer to the EASTL library for all the references 
+ */
+
+/*
  * The commented code lines in ~Vector() and ReAlloc() actually cause a memory leak since if in the main 
  * function that use of this class was SCOPED and contains a type that includes a pointer of some sort, the 
  * clear function and popback will manually call the destructor of that type thus cleaning it up. However
@@ -15,20 +19,8 @@
 ///////// For Development 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-#if _DEBUG
-
-#include "Log.h"
-#define NORMAL_LOG(x) std::cout << x << std::endl
-#define VEC_LOG(...) reda::Logger::get()->trace(__VA_ARGS__)
-
-#else
-
 #include <iostream>
-#define NORMAL_LOG(x)
-#define VEC_LOG(...)
-
-#endif
+#include "Log.h"
 
 
 namespace reda {
@@ -122,14 +114,14 @@ namespace reda {
 		Vector(const Vector& other)			// Copy Constructor
 			: m_Size(other.m_Size), m_Capacity(other.m_Size)
 		{
-			VEC_LOG("VECTOR COPY CALLED");
+			CORE_LOG_INFO("VECTOR COPY CALLED");
 			m_Data = CopyAlloc(m_Size, other);
 		}
 		
 		Vector(Vector&& other)				// Move Constructor
 			: m_Size(other.m_Size), m_Capacity(other.m_Size)
 		{
-			VEC_LOG("VECTOR MOVE CALLED");
+			CORE_LOG_INFO("VECTOR MOVE CALLED");
 
 			m_Data = MoveAlloc(m_Size, other);
 
@@ -139,7 +131,7 @@ namespace reda {
 		}
 
 		~Vector() {
-			VEC_LOG("Vector Deleted!");
+			CORE_LOG_ERROR("Vector Deleted!");
 			//delete[] m_Data;
 			clear();
 			::operator delete(m_Data, m_Capacity * sizeof(Type));
@@ -285,7 +277,7 @@ namespace reda {
 		////////////////////////////////////////////////////////
 
 		Vector& operator=(const Vector& other) { // Copy assignment operator
-			VEC_LOG("VECTOR COPY ASSIGNMENT CALLED");
+			CORE_LOG_INFO("VECTOR COPY ASSIGNMENT CALLED");
 
 			m_Size = other.m_Size;
 			m_Capacity = other.m_Capacity;
@@ -295,7 +287,7 @@ namespace reda {
 		}
 
 		Vector& operator=(Vector&& other) {		 // Move assignment operator
-			VEC_LOG("VECTOR MOVE ASSIGNMENT CALLED");
+			CORE_LOG_INFO("VECTOR MOVE ASSIGNMENT CALLED");
 
 			m_Size = other.m_Size;
 			m_Capacity = m_Capacity;
@@ -349,7 +341,7 @@ namespace reda {
 			// 2. copy (try to move) old elements into new block
 			// 3. delete old
 
-			VEC_LOG("REALLOC CALLED");
+			CORE_LOG_WARN("REALLOC CALLED");
 
 			Type* newBlock = (Type*)::operator new(newCapacity * sizeof(Type));
 			//Type* newBlock = new Type[newCapacity];
@@ -374,7 +366,7 @@ namespace reda {
 
 		// Same as the ReAlloc function however this is used only in Copy Constructor and operator
 		Type* CopyAlloc(size_t newCapacity, const Vector& other) {
-			VEC_LOG("COPYALLOC CALLED");
+			CORE_LOG_WARN("COPYALLOC CALLED");
 
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 			
@@ -387,7 +379,7 @@ namespace reda {
 
 		// Same as the CopyAlloc function however this is used only in Move Constructor and operator
 		Type* MoveAlloc(size_t newCapacity, const Vector& other) {
-			VEC_LOG("MOVEALLOC CALLED");
+			CORE_LOG_WARN("MOVEALLOC CALLED");
 
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 
