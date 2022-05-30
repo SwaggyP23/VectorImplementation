@@ -4,15 +4,15 @@
 
 ## DynamicArray.h
 
--- This is where the data structure is implemented
+- This is where the data structure is implemented
 
 ## Log.h and Log.cpp
 
--- This is a logging singleton class built around the **spdlog** library
--- In order to use this you will need to *#define _DEBUG 1* or *0* in 
-   visual studio's properties page or before the *#if _DEBUG*
--- You will need to call **reda::Log::Init();** in the entry point of your program to 
-   initialize and start using.
+- This is a logging singleton class built around the **spdlog** library
+- In order to use this you will need to *#define _DEBUG 1* or *0* in 
+  visual studio's properties page or before the *#if _DEBUG*
+- You will need to call **reda::Log::Init();** in the entry point of your program to 
+  initialize and start using.
 
 # spdlog Library
 
