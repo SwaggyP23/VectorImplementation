@@ -3,10 +3,6 @@
 #define _DYNAMIC_ARRAY_
 
 /*
- * Always refer to the EASTL library for all the references 
- */
-
-/*
  * The commented code lines in ~Vector() and ReAlloc() actually cause a memory leak since if in the main 
  * function that use of this class was SCOPED and contains a type that includes a pointer of some sort, the 
  * clear function and popback will manually call the destructor of that type thus cleaning it up. However
