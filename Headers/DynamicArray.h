@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _DYNAMIC_ARRAY_
+#define _DYNAMIC_ARRAY_
 
 /*
  * Always refer to the EASTL library for all the references 
@@ -19,7 +21,9 @@
 ///////// For Development 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
+
+#include <initializer_list>
+
 #include "Log.h"
 
 
@@ -30,7 +34,8 @@ namespace reda {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	template<typename Vector>
-	class VectorIterator {
+	class VectorIterator
+	{
 	public:
 		using ValueType = typename Vector::ValueType;
 		using PointerType = ValueType*;
@@ -40,57 +45,107 @@ namespace reda {
 		VectorIterator(PointerType ptr)
 			: m_Ptr(ptr) {}
 
-		VectorIterator& operator++() {
+		VectorIterator& operator++()
+		{
 			++m_Ptr;
 			return *this;
 		}
 
-		VectorIterator operator++(int) {
+		VectorIterator operator++(int)
+		{
 			VectorIterator iterator = *this;
 			++(*this);
 			return iterator;
 		}
 
-		VectorIterator& operator--() {
+		VectorIterator& operator--()
+		{
 			--m_Ptr;
 			return *this;
 		}
 
-		VectorIterator operator--(int) {
+		VectorIterator operator--(int)
+		{
 			VectorIterator iterator= *this;
 			--(*this);
 			return iterator;
 		}
 
-		VectorIterator operator+(int right) {
+		VectorIterator operator+(int right)
+		{
 			return m_Ptr + right;
 		}
 
-		VectorIterator operator-(int right) {
+		VectorIterator operator-(int right)
+		{
 			return m_Ptr - right;
 		}
 
-		ReferenceType operator[](int index) {
+		ReferenceType operator[](int index)
+		{
 			return *(m_Ptr + index); // Could also be written as m_Ptr[index] since it is a pointer but this 
 		}							 // also works...
 
-		bool operator==(const VectorIterator& right) const {
+		bool operator==(const VectorIterator& right) const
+		{
 			return m_Ptr == right.m_Ptr;
 		}
 
-		bool operator!=(const VectorIterator& right) const {
+		bool operator!=(const VectorIterator& right) const
+		{
 			return !(*this == right);
 		}
 
-		PointerType operator->() {
+		PointerType operator->() const
+		{
 			return m_Ptr; // The pointer here is also the position we are at.
 		}
 
-		ReferenceType operator*() {
+		ReferenceType operator*() const
+		{
 			return *m_Ptr;
 		}
-	private:
+	protected:
 		PointerType m_Ptr;
+	};
+
+	template<typename Vector>
+	class ConstVectorIterator : public VectorIterator<Vector>
+	{
+	public:
+		using valueType = typename Vector::ValueType;
+		using reference = const valueType&;
+
+		reference operator*() const
+		{
+			return *(this->m_Ptr);
+		}
+
+		ConstVectorIterator& operator++()
+		{
+			++(this->m_Ptr);
+			return *this;
+		}
+
+		ConstVectorIterator operator++(int)
+		{
+			ConstVectorIterator iterator = *this;
+			++(*this);
+			return iterator;
+		}
+		ConstVectorIterator& operator--()
+		{
+			--(this->m_Ptr);
+			return *this;
+		}
+
+		ConstVectorIterator operator--(int)
+		{
+			ConstVectorIterator iterator = *this;
+			--(*this);
+			return iterator;
+		}
+
 	};
 
 
@@ -104,11 +159,21 @@ namespace reda {
 	public:
 		using ValueType = Type;
 		using Iterator = VectorIterator<Vector<Type>>;
+		using const_Iterator = ConstVectorIterator<const Vector<Type>>;
 
 	public:
-		Vector() {							// Normal Constuctor
+		Vector()
+		{							// Normal Constuctor
 			// Allocate 2 elements
 			ReAlloc(2);
+		}
+
+		Vector(const std::initializer_list<Type>& initList)
+		{
+			ReAlloc(2);
+
+			for (auto& it : initList)
+				emplaceBack(it);
 		}
 
 		Vector(const Vector& other)			// Copy Constructor
@@ -130,8 +195,10 @@ namespace reda {
 			other.m_Data = nullptr;
 		}
 
-		~Vector() {
+		~Vector()
+		{
 			CORE_LOG_ERROR("Vector Deleted!");
+
 			//delete[] m_Data;
 			clear();
 			::operator delete(m_Data, m_Capacity * sizeof(Type));
@@ -139,14 +206,16 @@ namespace reda {
 
 		// Reserves the specified number of elements in the vecto. This method is adviced to be used
 		// ONLY after the declaration of the object
-		void reserve(size_t capacity) {
+		void reserve(size_t capacity)
+		{
 			if (capacity > m_Capacity)
 				ReAlloc(capacity);
 		}
 
 		// Shrinks the vector's capacity to its size, thus conserving memory. If this was used after 
 		// declaration it shrink the vector's capacity down to 0
-		void shrinkToSize() {
+		void shrinkToSize()
+		{
 			if (m_Size <= m_Capacity) {
 				ReAlloc(m_Size);
 				m_Capacity = m_Size;
@@ -158,36 +227,62 @@ namespace reda {
 			if (m_Size >= m_Capacity) 
 				ReAlloc(m_Capacity + (m_Capacity / 2));
 
-			new(&m_Data[m_Size++]) Type(val); // If this was m_Data[m_Size++] = val, it would crash under
+			new((void*)&m_Data[m_Size++]) Type(val); // If this was m_Data[m_Size++] = val, it would crash under
 											  // under the error that this is uninitialized memory
 											  // therefore we have to use the "Placement new" operator
 		}
 
 		// Pushes back an element to the vector
-		void pushBack(Type&& val) {
+		void pushBack(Type&& val)
+		{
 			if (m_Size >= m_Capacity)
 				ReAlloc(m_Capacity + m_Capacity / 2);
 
-			new(&m_Data[m_Size++]) Type(std::move(val)); // Same comment as the one above ^^^^
+			new((void*)&m_Data[m_Size++]) Type(std::move(val)); // Same comment as the one above ^^^^
 		}
 
 		// Emplaces back an element into the vector by MOVING it and not copying it
 		template<typename... Args>
-		Type& emplaceBack(Args&&... args) {
+		Type& emplaceBack(Args&&... args)
+		{
 			if (m_Size >= m_Capacity) 
 				ReAlloc(m_Capacity + (m_Capacity / 2));
 
-			new(&m_Data[m_Size]) Type(std::forward<Args>(args)...);
+			new((void*)&m_Data[m_Size]) Type(std::forward<Args>(args)...);
 
 			return m_Data[m_Size++];
 		}
 
-		void insertAt(unsigned int index, Type&& val) {
+		// Insert val at specified index by constructing it in its position
+		template<typename... Args>
+		Type& emplaceAt(uint32_t index, Args&&... args)
+		{
 			if (index == m_Size - 1) {
-				pushBack(static_cast<Type&&>(val));
+				Type temp = emplaceBack(args...);
+				return temp;
+			}
 
+			if (m_Size >= m_Capacity)
+				ReAlloc(m_Capacity + m_Capacity / 2);
+
+			new((void*)&m_Data[m_Size]) Type(std::move(m_Data[m_Size - 1]));
+
+			for (size_t i = m_Size - 1; i > index; i--)
+				m_Data[i] = std::move(m_Data[i - 1]);
+
+			new((void*)&m_Data[index]) Type(std::forward<Args>(args)...);
+
+			return m_Data[m_Size++];
+		}
+
+		// Insert val at specified index
+		void insertAt(uint32_t index, Type&& val)
+		{
+			if (index == m_Size - 1) {
+				pushBack((Type&&)val);
 				return;
 			}
+
 			if (m_Size >= m_Capacity)
 				ReAlloc(m_Capacity + m_Capacity / 2);
 			
@@ -197,18 +292,19 @@ namespace reda {
 			// before it. Now in the for loop all i have to do is actually move (shift) the elements forward 
 			// by 1 and then setting the specified index to the specified object.
 			// ALWAYS REMEMBER THAT YOU NEED TO INITIALIZE THE MEMORY
-			new(static_cast<void*>(&m_Data[m_Size])) Type(std::move(m_Data[m_Size - 1]));
+			new((void*)&m_Data[m_Size]) Type(std::move(m_Data[m_Size - 1]));
 
-			for (size_t i = m_Size - 1; i > index; i--) {
+			for (size_t i = m_Size - 1; i > index; i--)
 				m_Data[i] = std::move(m_Data[i - 1]);
-			}
 
 			m_Data[index] = std::move(val);
+
 			m_Size++;
 		}
 
 		// Pops the last element in the vector
-		void popBack() {
+		void popBack()
+		{
 			if (m_Size > 0) {
 				m_Size--;
 				m_Data[m_Size].~Type();
@@ -216,7 +312,8 @@ namespace reda {
 		}
 
 		// Removes the element at the specified index in the vector
-		void removeAt(size_t index) {
+		void removeAt(size_t index)
+		{
 			if (m_Size > 0) {
 				if (index == m_Size) {
 					popBack();
@@ -227,16 +324,15 @@ namespace reda {
 				if (index < m_Size) {
 					m_Data[index].~Type();
 
-					for (size_t i = index; i < m_Size; i++) {
-						//m_Data[i] = nullptr;
-						m_Data[i] = std::move(m_Data[i + 1]);
-					}
+				for (size_t i = index; i < m_Size; i++)
+					m_Data[i] = std::move(m_Data[i + 1]); //m_Data[i] = nullptr;
 				}
 			}
 		}
 
 		// Clears all the elements in the vector
-		void clear() {
+		void clear()
+		{
 			for (size_t i = 0; i < m_Size; i++)
 				m_Data[i].~Type();
 
@@ -250,7 +346,8 @@ namespace reda {
 		bool isEmpty() const { return (m_Size == 0) ? true : false; }
 
 		// Returns true if the specified value was found in the vector
-		bool contains(Type val) {
+		bool contains(Type val)
+		{
 			for (size_t i = 0; i < m_Size; i++) {
 				if (m_Data[i] == val)
 					return true;
@@ -260,7 +357,8 @@ namespace reda {
 		}
 
 		// Returns the index of the first instance of the specified value in the vector, if not found returns -1
-		int indexOf(Type val) {
+		int indexOf(Type val)
+		{
 			for (size_t i = 0; i < m_Size; i++) {
 				if (m_Data[i] == val)
 					return i;
@@ -276,7 +374,8 @@ namespace reda {
 		// Operator overloads...
 		////////////////////////////////////////////////////////
 
-		Vector& operator=(const Vector& other) { // Copy assignment operator
+		Vector& operator=(const Vector& other) // Copy assignment operator
+		{
 			CORE_LOG_INFO("VECTOR COPY ASSIGNMENT CALLED");
 
 			m_Size = other.m_Size;
@@ -286,7 +385,8 @@ namespace reda {
 			return *this;
 		}
 
-		Vector& operator=(Vector&& other) {		 // Move assignment operator
+		Vector& operator=(Vector&& other) // Move assignment operator
+		{
 			CORE_LOG_INFO("VECTOR MOVE ASSIGNMENT CALLED");
 
 			m_Size = other.m_Size;
@@ -301,11 +401,13 @@ namespace reda {
 			return *this;
 		}
 
-		Type& operator[](size_t index) {
+		Type& operator[](size_t index)
+		{
 			return m_Data[index];
 		}
 
-		const Type& operator[](size_t index) const {
+		const Type& operator[](size_t index) const
+		{
 			return m_Data[index];
 		}
 
@@ -313,30 +415,35 @@ namespace reda {
 		// Iterator functionality...
 		////////////////////////////////////////////////////////
 
-		// Returns a READ-ONLY iterator pointing to the first element in the vector
-		Iterator begin() const {
-			return Iterator(m_Data);
-		}
-
 		// Returns an iterator pointing to the first element in the vector
-		Iterator begin() {
+		Iterator begin() const
+		{
 			return Iterator(m_Data);
 		}
 
-		// Returns a READ-ONLY iterator pointing to the last element in the vector
-		Iterator end() const {
-			return Iterator(m_Data + m_Size);
+		// Returns a READ-ONLY iterator pointing to the first element in the vector
+		const_Iterator cbegin() const
+		{
+			return const_Iterator(m_Data);
 		}
 
 		// Returns an iterator pointing to the last element in the vector
-		Iterator end() {
+		Iterator end() const
+		{
 			return Iterator(m_Data + m_Size);
+		}
+
+		// Returns a READ-ONLY iterator pointing to the last element in the vector
+		const_Iterator cend() const
+		{
+			return const_Iterator(m_Data + m_Size);
 		}
 
 	private:
 		// This function is used to allocate and reallocate memory for a newblock and supports shrinking and 
 		// also increasing the size.
-		void ReAlloc(size_t newCapacity) {
+		void ReAlloc(size_t newCapacity)
+		{
 			// 1. allocate a new block of memory
 			// 2. copy (try to move) old elements into new block
 			// 3. delete old
@@ -350,12 +457,9 @@ namespace reda {
 				m_Size = newCapacity;
 
 			for (size_t i = 0; i < m_Size; i++)
-				new(&newBlock[i]) Type(std::move(m_Data[i])); 
+				new((void*)&newBlock[i]) Type(std::move(m_Data[i]));
 			// Can not use memcpy() like i was doing since using it will not call the copy 
 			// Constructor of the elements if they were Struct or Class pointers.
-
-			for (size_t i = 0; i < m_Size; i++)
-				m_Data[i].~Type();
 
 			::operator delete(m_Data, m_Capacity * sizeof(Type));
 			//delete[] m_Data;
@@ -365,27 +469,27 @@ namespace reda {
 		}
 
 		// Same as the ReAlloc function however this is used only in Copy Constructor and operator
-		Type* CopyAlloc(size_t newCapacity, const Vector& other) {
+		Type* CopyAlloc(size_t newCapacity, const Vector& other)
+		{
 			CORE_LOG_WARN("COPYALLOC CALLED");
 
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 			
-			for (size_t i = 0; i < other.m_Size; i++) {
-				new(&m_Data[i]) Type(other.m_Data[i]);
-			}
+			for (size_t i = 0; i < other.m_Size; i++)
+				new((void*)&m_Data[i]) Type(other.m_Data[i]);
 
 			return m_Data;
 		}
 
 		// Same as the CopyAlloc function however this is used only in Move Constructor and operator
-		Type* MoveAlloc(size_t newCapacity, const Vector& other) {
+		Type* MoveAlloc(size_t newCapacity, const Vector& other)
+		{
 			CORE_LOG_WARN("MOVEALLOC CALLED");
 
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 
-			for (size_t i = 0; i < other.m_Size; i++) {
-				new(&m_Data[i]) Type(std::move(other.m_Data[i]));
-			}
+			for (size_t i = 0; i < other.m_Size; i++)
+				new((void*)&m_Data[i]) Type(std::move(other.m_Data[i]));
 
 			return m_Data;
 		}
@@ -396,3 +500,5 @@ namespace reda {
 		Type* m_Data = nullptr;
 	};
 }
+
+#endif
