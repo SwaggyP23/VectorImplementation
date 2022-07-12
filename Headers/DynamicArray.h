@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _DYNAMIC_ARRAY_
-#define _DYNAMIC_ARRAY_
+#ifndef _REDA_DYNAMIC_ARRAY_
+#define _REDA_DYNAMIC_ARRAY_
 
 /*
  * The commented code lines in ~Vector() and ReAlloc() actually cause a memory leak since if in the main 
@@ -13,15 +13,7 @@
  * source of the elements is no longer valid after the move happens and operations on it will maybe crash
  */
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-///////// For Development 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 #include <initializer_list>
-
-#include "Log.h"
-
 
 namespace reda {
 
@@ -175,15 +167,12 @@ namespace reda {
 		Vector(const Vector& other)			// Copy Constructor
 			: m_Size(other.m_Size), m_Capacity(other.m_Size)
 		{
-			CORE_LOG_INFO("VECTOR COPY CALLED");
 			m_Data = CopyAlloc(m_Size, other);
 		}
 		
 		Vector(Vector&& other)				// Move Constructor
 			: m_Size(other.m_Size), m_Capacity(other.m_Size)
 		{
-			CORE_LOG_INFO("VECTOR MOVE CALLED");
-
 			m_Data = MoveAlloc(m_Size, other);
 
 			other.m_Size = 0;
@@ -193,8 +182,6 @@ namespace reda {
 
 		~Vector()
 		{
-			CORE_LOG_ERROR("Vector Deleted!");
-
 			//delete[] m_Data;
 			clear();
 			::operator delete(m_Data, m_Capacity * sizeof(Type));
@@ -372,8 +359,6 @@ namespace reda {
 
 		Vector& operator=(const Vector& other) // Copy assignment operator
 		{
-			CORE_LOG_INFO("VECTOR COPY ASSIGNMENT CALLED");
-
 			m_Size = other.m_Size;
 			m_Capacity = other.m_Capacity;
 			CopyAlloc(m_Size, other);
@@ -383,8 +368,6 @@ namespace reda {
 
 		Vector& operator=(Vector&& other) // Move assignment operator
 		{
-			CORE_LOG_INFO("VECTOR MOVE ASSIGNMENT CALLED");
-
 			m_Size = other.m_Size;
 			m_Capacity = m_Capacity;
 
@@ -444,8 +427,6 @@ namespace reda {
 			// 2. copy (try to move) old elements into new block
 			// 3. delete old
 
-			CORE_LOG_WARN("REALLOC CALLED");
-
 			Type* newBlock = (Type*)::operator new(newCapacity * sizeof(Type));
 			//Type* newBlock = new Type[newCapacity];
 
@@ -467,8 +448,6 @@ namespace reda {
 		// Same as the ReAlloc function however this is used only in Copy Constructor and operator
 		Type* CopyAlloc(size_t newCapacity, const Vector& other)
 		{
-			CORE_LOG_WARN("COPYALLOC CALLED");
-
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 			
 			for (size_t i = 0; i < other.m_Size; i++)
@@ -480,8 +459,6 @@ namespace reda {
 		// Same as the CopyAlloc function however this is used only in Move Constructor and operator
 		Type* MoveAlloc(size_t newCapacity, const Vector& other)
 		{
-			CORE_LOG_WARN("MOVEALLOC CALLED");
-
 			m_Data = (Type*)::operator new(newCapacity * sizeof(Type));
 
 			for (size_t i = 0; i < other.m_Size; i++)

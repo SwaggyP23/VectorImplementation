@@ -1,5 +1,4 @@
 #include "DynamicArray.h"
-#include "Log.h"
 #include <iostream>
 
 class Point
@@ -43,20 +42,15 @@ public:
 	{
 		m_MemoryBlock = other.m_MemoryBlock;
 		other.m_MemoryBlock = nullptr;
-
-		LOG_INFO("Point Move");
 	}
  
-	~Point() { // Destructor
-		LOG_ERROR("Point Destroy");
-			
+	~Point() // Destructor
+	{ 
 		delete[] m_MemoryBlock;
 	}
 
 	Point& operator=(const Point& other) // Copy assignment operator
 	{
-		LOG_INFO("Point Assignment Copy Called");
-
 		x = other.x;
 		y = other.y;
 		m_MemoryBlock = new int[5];
@@ -65,9 +59,8 @@ public:
 		return *this;
 	}
 
-	Point& operator=(Point&& other) noexcept { // Move assignment operator
-		LOG_INFO("Point Assignment Move Called");
-
+	Point& operator=(Point&& other) noexcept // Move assignment operator
+	{ 
 		m_MemoryBlock = other.m_MemoryBlock;
 		other.m_MemoryBlock = nullptr;
 		x = other.x;
@@ -82,14 +75,16 @@ public:
 	friend std::ostream& operator<<(std::ostream& stream, const Point& pnt);
 };
 
-std::ostream& operator<<(std::ostream& stream, const Point& pnt) {
+std::ostream& operator<<(std::ostream& stream, const Point& pnt)
+{
 
 	stream << "X: " << pnt.x << "  Y: " << pnt.y;
 	return stream;
 }
 
 template<typename T>
-void printVector(const reda::Vector<T>& vec) {
+void printVector(const reda::Vector<T>& vec)
+{
 	for (auto& it : vec) //Using reference after auto will cause the Point to move and not copy
 		std::cout << it << std::endl;
 	std::cout << "---------------------------------" << std::endl;
@@ -97,8 +92,6 @@ void printVector(const reda::Vector<T>& vec) {
 
 int main()
 {
-	reda::Log::Init(); // Initializing the logging system
-
 	{
 		reda::Vector<Point> temp{ {5, 5}, {6, 6} };
 		temp.emplaceAt(1, 10, 10);
